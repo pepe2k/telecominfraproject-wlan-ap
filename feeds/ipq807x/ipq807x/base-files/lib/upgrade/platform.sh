@@ -253,19 +253,20 @@ platform_do_upgrade() {
 	edgecore,eap101|\
 	edgecore,eap102|\
 	edgecore,oap102)
+		active_prefix=$(fw_printenv -n active 2>/dev/null | sed 's/[0-9]*//g')
 		if [ "$(find_mtd_chardev rootfs)" ]; then
 			CI_UBIPART="rootfs"
 		else
 			if [ -e /tmp/downgrade ]; then
 				CI_UBIPART="rootfs1"
-				fw_setenv active 1 || exit 1
+				fw_setenv active "${active_prefix}1" || exit 1
 				fw_setenv upgrade_available 0 || exit 1
 			elif grep -q rootfs1 /proc/cmdline; then
 				CI_UBIPART="rootfs2"
-				CI_FWSETENV="active 2"
+				CI_FWSETENV="active ${active_prefix}2"
 			else
 				CI_UBIPART="rootfs1"
-				CI_FWSETENV="active 1"
+				CI_FWSETENV="active ${active_prefix}1"
 			fi
 		fi
 		nand_upgrade_tar "$1"

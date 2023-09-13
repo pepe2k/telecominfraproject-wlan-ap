@@ -117,15 +117,16 @@ platform_do_upgrade() {
 		nand_upgrade_tar "$1"
 		;;
 	edgecore,eap101)
+		active_prefix=$(fw_printenv -n active 2>/dev/null | sed 's/[0-9]*//g')
 		if [ "$(find_mtd_chardev rootfs)" ]; then
 			CI_UBIPART="rootfs"
 		else
 			if grep -q rootfs1 /proc/cmdline; then
 				CI_UBIPART="rootfs2"
-				fw_setenv active 2 || exit 1
+				fw_setenv active "${active_prefix}2" || exit 1
 			else
 				CI_UBIPART="rootfs1"
-				fw_setenv active 1 || exit 1
+				fw_setenv active "${active_prefix}1" || exit 1
 			fi
 		fi
 		nand_upgrade_tar "$1"
