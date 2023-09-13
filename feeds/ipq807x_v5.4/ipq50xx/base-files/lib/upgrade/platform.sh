@@ -89,11 +89,25 @@ platform_do_upgrade() {
 
 	board=$(board_name)
 	case $board in
+	edgecore,eap104)
+		active_prefix=$(fw_printenv -n active 2>/dev/null | sed 's/[0-9]*//g')
+		if [ "$(find_mtd_chardev rootfs)" ]; then
+			CI_UBIPART="rootfs"
+		else
+			if grep -q rootfs1 /proc/cmdline; then
+				CI_UBIPART="rootfs2"
+				CI_FWSETENV="active ${active_prefix}2"
+			else
+				CI_UBIPART="rootfs1"
+				CI_FWSETENV="active ${active_prefix}1"
+			fi
+		fi
+		nand_upgrade_tar "$1"
+		;;
 	edgecore,oap101|\
 	edgecore,oap101-6e|\
 	edgecore,oap101e|\
-	edgecore,oap101e-6e|\
-	edgecore,eap104)
+	edgecore,oap101e-6e)
 		CI_UBIPART="rootfs1"
 		[ "$(find_mtd_chardev rootfs)" ] && CI_UBIPART="rootfs"
 		nand_upgrade_tar "$1"

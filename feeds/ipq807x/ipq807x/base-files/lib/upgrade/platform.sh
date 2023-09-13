@@ -243,7 +243,6 @@ platform_do_upgrade() {
 		fi
 		nand_upgrade_tar "$1"
 		;;
-	edgecore,eap104|\
 	liteon,wpx8324|\
 	edgecore,eap106)
 		CI_UBIPART="rootfs1"
@@ -252,6 +251,7 @@ platform_do_upgrade() {
 		;;
 	edgecore,eap101|\
 	edgecore,eap102|\
+	edgecore,eap104|\
 	edgecore,oap102)
 		active_prefix=$(fw_printenv -n active 2>/dev/null | sed 's/[0-9]*//g')
 		if [ "$(find_mtd_chardev rootfs)" ]; then
