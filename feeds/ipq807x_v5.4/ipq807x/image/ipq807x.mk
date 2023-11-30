@@ -17,7 +17,7 @@ define Device/cig_wf196
   BLOCKSIZE := 256k
   PAGESIZE := 4096
   DEVICE_PACKAGES := ath11k-wifi-cig-wf196 aq-fw-download uboot-envtools kmod-usb3 kmod-usb2 \
-  	ath11k-firmware-qcn9000
+	ath11k-firmware-qcn9000 zephyr-v3.6.x-hci_uart-cig_wf196_nrf52833
 endef
 TARGET_DEVICES += cig_wf196
 
@@ -26,7 +26,8 @@ define Device/edgecore_eap102
   DEVICE_DTS := qcom-ipq807x-eap102
   DEVICE_DTS_CONFIG=config@ac02
   SUPPORTED_DEVICES := edgecore,eap102
-  DEVICE_PACKAGES := ath11k-wifi-edgecore-eap102 kmod-usb2 kmod-usb3 uboot-envtools
+  DEVICE_PACKAGES := ath11k-wifi-edgecore-eap102 kmod-usb2 kmod-usb3 uboot-envtools \
+	zephyr-v3.6.x-hci_usb-edgecore_eap102_nrf52840
 endef
 TARGET_DEVICES += edgecore_eap102
 
@@ -35,7 +36,8 @@ define Device/edgecore_oap102
   DEVICE_DTS := qcom-ipq807x-oap102
   DEVICE_DTS_CONFIG=config@ac02
   SUPPORTED_DEVICES := edgecore,oap102
-  DEVICE_PACKAGES := ath11k-wifi-edgecore-eap102 kmod-usb2 kmod-usb3 uboot-envtools
+  DEVICE_PACKAGES := ath11k-wifi-edgecore-eap102 kmod-usb2 kmod-usb3 uboot-envtools \
+	zephyr-v3.6.x-hci_usb-edgecore_eap102_nrf52840
 endef
 TARGET_DEVICES += edgecore_oap102
 
