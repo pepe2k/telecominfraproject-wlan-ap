@@ -99,7 +99,9 @@ mcu_get() {
 	local sysinfo_field
 
 	case "$param" in
+	"soc"|\
 	"board"|\
+	"target"|\
 	"soft_ver"|\
 	"serial_num"|\
 	"active_slot")
@@ -307,7 +309,10 @@ mcu_fw_check_and_update() {
 	local firmware
 	local fw0_sha
 	local fw1_sha
+	local board_dir
 	local board
+	local target
+	local soc
 	local soft_ver
 
 	config_get firmware "$SECT" firmware
@@ -317,9 +322,28 @@ mcu_fw_check_and_update() {
 	mcu_fetch_sysinfo "$uart" "$baud" "$flow" || return 1
 	mcu_fetch_fwlist "$uart" "$baud" "$flow" || return 1
 
-	# MCU board name and software version
+	# MCU board name, target, SOC and software version
 	board="$(mcu_get "board")"
 	[ $? -eq 0 ] || return 1
+
+	target="$(mcu_get "target")"
+	[ $? -eq 0 ] || return 1
+
+	soc="$(mcu_get "soc")"
+	[ $? -eq 0 ] || return 1
+
+	board_dir="${board}"
+
+	[ -d "${MCU_FW_DIR}/${board_dir}" ] || {
+		[ -n "$target" ] && board_dir="${target//\//_}"
+	}
+
+	if [ -d "${MCU_FW_DIR}/${board_dir}" ]; then
+		mcu_logi "found firmware folder for '${board}': '${MCU_FW_DIR}/${board_dir}'"
+		board="${board_dir}"
+	else
+		mcu_logw "firmware folder for '${board}' doesn't exist"
+	fi
 
 	soft_ver="$(mcu_get "soft_ver")"
 	[ $? -eq 0 ] || return 1
