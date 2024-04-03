@@ -160,9 +160,9 @@ define mcu-fw-generate
   endef
 
   define Package/$(1)-$(2)-$(3)/install
-	$(INSTALL_DIR) $$(1)/lib/firmware/mcu/$(3)/$(1)__$(2)
+	$(INSTALL_DIR) $$(1)/lib/firmware/mcu/$(3)/$(1)/$(2)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(1)/$(3)/$(1)__$(2)/*.bin \
-		$$(1)/lib/firmware/mcu/$(3)/$(1)__$(2)/
+		$$(1)/lib/firmware/mcu/$(3)/$(1)/$(2)/
 	$(if $(4), $(LN) $(3) $$(1)/lib/firmware/mcu/$(4))
   endef
 
