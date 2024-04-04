@@ -8,7 +8,7 @@ MCU_CFG_FOUND="0"
 
 mcu_hotplug_setup() {
 	local sn
-	local fw_type
+	local fw_name
 	local disabled
 
 	local sn_dev="$2"
@@ -52,11 +52,11 @@ mcu_hotplug_setup() {
 	[ "$rc" = "1" ] && return 1
 
 	[ "$rc" = "0" ] && {
-		fw_type="$(uci -q get "mcu.${SECT}.firmware" | awk -F '__' '{print $2}')"
-		[ -n "$fw_type" ] || return 0
+		fw_name="$(uci -q get "mcu.${SECT}.fw_name")"
+		[ -n "$fw_name" ] || return 0
 
-		[ -x "${MCU_HS_DIR}/${fw_type}.sh" ] && \
-			"${MCU_HS_DIR}/${fw_type}.sh" "$SECT"
+		[ -x "${MCU_HS_DIR}/${fw_name}.sh" ] && \
+			"${MCU_HS_DIR}/${fw_name}.sh" "$SECT"
 	}
 
 	return 0

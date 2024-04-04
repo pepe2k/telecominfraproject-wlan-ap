@@ -1,0 +1,35 @@
+[ -e /etc/config/mcu ] || exit 0
+
+. /lib/functions.sh
+
+mcu_fw_path_update() {
+	local sect
+	local fw_name
+	local fw_sdkver
+	local firmware
+
+	sect="$1"
+
+	config_get firmware "$sect" firmware
+	[ -n "$firmware" ] || return 0
+
+	fw_name="$(echo -n "$firmware" | awk -F '__' '{print $2}')"
+	fw_sdkver="$(echo -n "$firmware" | awk -F '__' '{print $1}')"
+
+	[ -n "$fw_name" -a -n "$fw_sdkver" ] && {
+		[ -e /etc/config-shadow/mcu ] && {
+			uci -c /etc/config-shadow -q set mcu.${sect}.fw_name="$fw_name"
+			uci -c /etc/config-shadow -q set mcu.${sect}.fw_sdkver="$fw_sdkver"
+			uci -c /etc/config-shadow -q delete mcu.${sect}.firmware
+		}
+
+		uci -q set mcu.${sect}.fw_name="$fw_name"
+		uci -q set mcu.${sect}.fw_sdkver="$fw_sdkver"
+		uci -q delete mcu.${sect}.firmware
+	}
+}
+
+config_load mcu
+config_foreach mcu_fw_path_update mcu
+
+exit 0

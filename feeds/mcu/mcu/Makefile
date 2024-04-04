@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mcu
-PKG_VERSION:=2024-03-22
+PKG_VERSION:=2024-04-02
 PKG_RELEASE=1
 
 PKG_LICENSE:=GPL-2.0
@@ -37,6 +37,7 @@ define Package/mcu/install
 	$(INSTALL_BIN) ./files/mcu.init $(1)/etc/init.d/mcu
 	$(INSTALL_DATA) ./files/mcu.hotplug $(1)/etc/hotplug.d/usb/30-mcu
 	$(INSTALL_DATA) ./files/mcu.sh $(1)/lib/functions
+	$(INSTALL_DATA) ./files/mcu.migrate $(1)/etc/uci-defaults/10-mcu-firmware-path-migrate
 	$(if $(wildcard ./files/uci-defaults/$(BOARD)_$(SUBTARGET)), \
 		$(INSTALL_DATA) ./files/uci-defaults/$(BOARD)_$(SUBTARGET) \
 		$(1)/etc/uci-defaults/20-mcu, \

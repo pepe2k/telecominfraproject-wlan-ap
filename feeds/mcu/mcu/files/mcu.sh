@@ -95,7 +95,9 @@ mcu_get() {
 	local slot="$2"
 
 	local value
+	local fw_name
 	local metadata
+	local fw_sdkver
 	local sysinfo_field
 
 	case "$param" in
@@ -112,12 +114,23 @@ mcu_get() {
 		;;
 	"fwname")
 		[ -n "$slot" ] || return 1
-		param="image list: slot${slot} fw_name"
+		param="image list: slot${slot} fw_sdkver/fw_name"
 
 		metadata="$(echo "$MCU_IMGLIST_OUTPUT" | grep "slot${slot}_metadata=" | cut -d '=' -f 2)"
 		[ -n "$metadata" ] && {
 			json_load "$metadata"
-			json_get_var value fw_name
+			json_get_var fw_name fw_name
+			json_get_var fw_sdkver fw_sdkver
+
+			# Support updated metadata with separated 'fw_name'
+			# (firmware name) and 'fw_sdkver' (SDK version) fields
+			[ -n "$fw_sdkver" ] || {
+				fw_sdkver="$(echo -n "$fw_name" | awk -F '__' '{print $1}')"
+				fw_name="$(echo -n "$fw_name" | awk -F '__' '{print $2}')"
+			}
+
+			[ -n "$fw_sdkver" -a -n "$fw_name" ] && \
+				value="${fw_sdkver}/${fw_name}"
 		}
 		;;
 	"fwsha")
@@ -216,7 +229,7 @@ mcu_fwfile_sha() {
 mcu_fw_upload() {
 	local board="$1"
 	local slot="$2"
-	local fw_name="$3"
+	local firmware="$3"
 	local uart="$4"
 	local baud="$5"
 	local flow="$6"
@@ -231,13 +244,13 @@ mcu_fw_upload() {
 
 	[ -n "$baud" ] || baud="115200"
 
-	fw_path="${MCU_FW_DIR}/${board}/${fw_name}/slot${slot}.bin"
+	fw_path="${MCU_FW_DIR}/${board}/${firmware}/slot${slot}.bin"
 	umcumgr -q info "$fw_path" > /dev/null 2>&1 || {
 		mcu_loge "invalid or missing firmware file: '$fw_path'"
 		return 1
 	}
 
-	mcu_logi "uploading '$fw_name' to slot: '$slot'..."
+	mcu_logi "uploading '$firmware' to slot: '$slot'..."
 
 	# Upload fw to selected slot (TODO: slots numbering Zephyr vs. MCUboot)
 	[ "$slot" = "1" ] && slot="2"
@@ -307,6 +320,8 @@ mcu_fw_check_and_update() {
 	local slot1_fw
 	local slot1_sha
 	local firmware
+	local fw_name
+	local fw_sdkver
 	local fw0_sha
 	local fw1_sha
 	local board_dir
@@ -315,8 +330,15 @@ mcu_fw_check_and_update() {
 	local soc
 	local soft_ver
 
-	config_get firmware "$SECT" firmware
-	[ -n "$firmware" ] || mcu_logw "option 'firmware' unset"
+	# Updated metadata uses separated fields for 'fw_name' (firmware name)
+	# and 'fw_sdkver' (SDK version), make firmware path from these fields
+	config_get fw_name "$SECT" fw_name
+	config_get fw_sdkver "$SECT" fw_sdkver
+	if [ -n "$fw_sdkver" -a -n "$fw_name" ]; then
+		firmware="${fw_sdkver}/${fw_name}"
+	else
+		mcu_logw "options 'fw_name' and/or 'fw_sdkver' unset"
+	fi
 
 	# Fetch sysinfo and firmware images list
 	mcu_fetch_sysinfo "$uart" "$baud" "$flow" || return 1
@@ -403,12 +425,18 @@ mcu_fw_check_and_update() {
 		[ "$active_slot" = "1" ] && firmware="$slot1_fw"
 
 		[ -n "$firmware" ] && {
+			# Split firmware path into 'fw_name' and 'fw_sdkver'
+			fw_name="$(echo -n "$firmware" | awk -F '/' '{print $2}')"
+			fw_sdkver="$(echo -n "$firmware" | awk -F '/' '{print $1}')"
+
 			[ -d /etc/config-shadow ] && {
-				uci -c /etc/config-shadow -q set mcu.${SECT}.firmware="$firmware"
+				uci -c /etc/config-shadow -q set mcu.${SECT}.fw_name="$fw_name"
+				uci -c /etc/config-shadow -q set mcu.${SECT}.fw_sdkver="$fw_sdkver"
 				uci -c /etc/config-shadow -q commit mcu
 			}
 
-			uci -q set mcu.${SECT}.firmware="$firmware"
+			uci -q set mcu.${SECT}.fw_name="$fw_name"
+			uci -q set mcu.${SECT}.fw_sdkver="$fw_sdkver"
 			uci -q commit mcu
 
 			mcu_req "boot" "$uart" "$baud" "$flow"
@@ -502,16 +530,18 @@ mcu_add_uci_config() {
 	local name="$1"
 	local interface="$2"
 	local bootloader="$3"
-	local firmware="$4"
-	local enable_pin="$5"
-	local uart_path="$6"
-	local uart_baud="$7"
-	local uart_flow="$8"
+	local fw_sdkver="$4"
+	local fw_name="$5"
+	local enable_pin="$6"
+	local uart_path="$7"
+	local uart_baud="$8"
+	local uart_flow="$9"
 
 	uci -q set mcu.${name}="mcu"
 	uci -q set mcu.${name}.interface="$interface"
 	uci -q set mcu.${name}.bootloader="$bootloader"
-	uci -q set mcu.${name}.firmware="$firmware"
+	uci -q set mcu.${name}.fw_name="$fw_name"
+	uci -q set mcu.${name}.fw_sdkver="$fw_sdkver"
 
 	[ -n "$enable_pin" ] && uci -q set mcu.${name}.enable_pin="$enable_pin"
 	[ -n "$uart_path" ] && uci -q set mcu.${name}.uart_path="$uart_path"
